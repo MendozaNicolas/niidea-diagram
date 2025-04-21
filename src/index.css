@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/Montserrat-Regular.woff') format('ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  font-family: 'Montserrat', Arial, sans-serif;
+
+  --color-primary: #3498db;
+  --color-secondary: #2ecc71;
+  --color-accent: #e74c3c;
+  --color-background: #f4f4f4;
+  --color-text: #333333;
+  --color-border: #cccccc;
+  --color-hover: #2980b9;
+  --color-light: #ecf0f1;
+  --color-dark: #2c3e50;
+}
