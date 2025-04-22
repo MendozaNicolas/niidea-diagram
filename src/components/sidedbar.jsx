@@ -1,58 +1,52 @@
 import React, { useState, useRef, useEffect } from 'react';
+// Import icons from react-icons library
+import { 
+  FiFolder, 
+  FiFolderPlus, 
+  FiFile, 
+  FiSearch, 
+  FiPlus, 
+  FiMinus, 
+  FiRefreshCw, 
+  FiCheck,
+  FiGrid,
+  FiClock,
+  FiRotateCcw,
+  FiRotateCw
+} from 'react-icons/fi';
+import { 
+  BiTable, 
+  BiCodeBlock, 
+  BiGitBranch, 
+  BiCog,
+  BiHistory
+} from 'react-icons/bi';
+import { 
+  VscFiles, 
+  VscSearch, 
+  VscSourceControl, 
+  VscExtensions,
+  VscDebug,
+  VscHistory
+} from 'react-icons/vsc';
+import { TbTableOptions } from 'react-icons/tb';
+import { RiZoomInLine, RiZoomOutLine } from 'react-icons/ri';
+import { useHistory } from '../context/HistoryContext';
 
-// SVG icons as components for a more professional look
-const ExplorerIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-
-const GitIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M21 11.10v.9c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.68.94 6.38 2.62l1.42-1.42C17.94 2.35 15.08 1 12 1 5.93 1 1 5.93 1 12s4.93 11 11 11 11-4.93 11-11v-.9l2 2V10h-4.1l2 2H21z"/>
-  </svg>
-);
-
-const DiagramIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M3 3h6v6H3V3zm12 0h6v6h-6V3zm0 12h6v6h-6v-6zM3 15h6v6H3v-6zm3-9v3h3V6H6zm12 0v3h3V6h-3zm0 12v3h3v-3h-3zM6 18v-3h3v3H6z"/>
-  </svg>
-);
-
-const DebugIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20 8h-2.81c-.45-.8-1.07-1.5-1.82-2L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5s-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.25 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-4 4v3c0 .22-.03.47-.07.7l-.1.65-.37.65c-.72 1.24-2.04 2-3.46 2s-2.74-.77-3.46-2l-.37-.64-.1-.65C8.03 15.48 8 15.23 8 15v-4c0-.23.03-.48.07-.7l.1-.65.37-.65c.3-.52.72-.97 1.21-1.31l.57-.39.74-.18c.31-.08.63-.12.94-.12.32 0 .63.04.95.12l.68.16.61.42c.5.34.91.78 1.21 1.31l.38.65.1.65c.04.22.07.47.07.69v1zm-6 2h4v2h-4v-2zm0-4h4v2h-4v-2z"/>
-  </svg>
-);
-
-const ExtensionIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/>
-  </svg>
-);
+// Replace SVG components with react-icons 
+const ExplorerIcon = () => <VscFiles size={24} />;
+const SearchIcon = () => <VscSearch size={24} />;
+const GitIcon = () => <VscSourceControl size={24} />;
+const DiagramIcon = () => <TbTableOptions size={24} />;
+const DebugIcon = () => <VscDebug size={24} />; // Changed from VscDebugAlt2 to VscDebug
+const ExtensionIcon = () => <VscExtensions size={24} />;
+const HistoryIcon = () => <VscHistory size={24} />;
 
 const FolderIcon = ({ isOpen }) => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    {isOpen ? (
-      <path d="M1.5 1H6l1.5 1.5h7V13H1.5V1zm0 3v8h11.5V4H7.5L6 2.5H1.5z"/>
-    ) : (
-      <path d="M1.5 1H6l1.5 1.5h7V13H1.5V1zm0 3v8h11.5V4H7.5L6 2.5H1.5z"/>
-    )}
-  </svg>
+  isOpen ? <FiFolderPlus size={16} color="#e8ab3f" /> : <FiFolder size={16} color="#e8ab3f" />
 );
 
-const FileIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <path d="M13.5 1H5.5l-4 4v9.5h12V1zM12 13H3V5.75L6.25 2.5H12V13z"/>
-  </svg>
-);
+const FileIcon = () => <FiFile size={16} color="#75beff" />;
 
 const SideBar = ({ 
   onCollapse, 
@@ -63,7 +57,10 @@ const SideBar = ({
   onZoomOut,
   onResetView,
   snapToGrid,
-  zoomLevel
+  zoomLevel,
+  onUndoAction,
+  onRedoAction,
+  onHistoryNavigation
 }) => {
     // State for active section
     const [activeSection, setActiveSection] = useState('explorer');
@@ -77,6 +74,71 @@ const SideBar = ({
     const [isResizing, setIsResizing] = useState(false);
     // Ref for resize handling
     const sidebarRef = useRef(null);
+    
+    // Get history context
+    const { actions, currentPosition, undo, redo, canUndo, canRedo, goToHistoryPosition } = useHistory();
+
+    // Handle undo action
+    const handleUndo = () => {
+        if (canUndo) {
+            const action = undo();
+            if (action && onUndoAction) {
+                onUndoAction(action);
+            }
+        }
+    };
+
+    // Handle redo action
+    const handleRedo = () => {
+        if (canRedo) {
+            const action = redo();
+            if (action && onRedoAction) {
+                onRedoAction(action);
+            }
+        }
+    };
+
+    // Handle going to a specific history position
+    const handleGoToHistoryPosition = (position) => {
+        const result = goToHistoryPosition(position);
+        if (result && onHistoryNavigation) {
+            onHistoryNavigation(result);
+        }
+    };
+
+    // Helper function to get action icon
+    const getActionIcon = (type) => {
+        switch (type) {
+            case 'create':
+                return <FiPlus size={14} className="history-action-icon create" />;
+            case 'add':
+                return <FiPlus size={14} className="history-action-icon add" />;
+            case 'delete':
+                return <FiMinus size={14} className="history-action-icon delete" />;
+            case 'update':
+                return <FiRefreshCw size={14} className="history-action-icon update" />;
+            default:
+                return <FiClock size={14} className="history-action-icon" />;
+        }
+    };
+
+    // Helper function to get action description
+    const getActionDescription = (action) => {
+        switch (action.type) {
+            case 'create':
+                return `Created ${action.entity} "${action.name}"`;
+            case 'add':
+                return `Added ${action.entity} "${action.name}" to ${action.table}`;
+            case 'delete':
+                return `Deleted ${action.entity} "${action.name}"`;
+            case 'update':
+                return `Updated ${action.entity} "${action.name}"`;
+            case 'relationship':
+                return `Created relationship ${action.from} → ${action.to}`;
+            default:
+                return `Unknown action on ${action.entity}`;
+        }
+    };
 
     // Handle section click
     const handleSectionClick = (sectionId) => {
@@ -164,6 +226,7 @@ const SideBar = ({
     const sections = [
         { id: 'explorer', icon: ExplorerIcon, title: 'Explorer' },
         { id: 'diagram', icon: DiagramIcon, title: 'Diagram Tools' },
+        { id: 'history', icon: HistoryIcon, title: 'History' },
         { id: 'search', icon: SearchIcon, title: 'Search' },
         { id: 'git', icon: GitIcon, title: 'Source Control' },
         { id: 'extensions', icon: ExtensionIcon, title: 'Extensions' }
@@ -179,8 +242,21 @@ const SideBar = ({
                 { name: 'components', type: 'folder', expanded: true, 
                   children: [
                     { name: 'sidebar.jsx', type: 'file' },
-                    { name: 'titlebar.jsx', type: 'file' }
+                    { name: 'titlebar.jsx', type: 'file' },
+                    { name: 'DiagramEditor.jsx', type: 'file' },
+                    { name: 'DiagramColumn.jsx', type: 'file' },
+                    { name: 'DiagramRelationship.jsx', type: 'file' }
                   ] 
+                },
+                { name: 'assets', type: 'folder', expanded: false,
+                  children: [
+                    { name: 'react.svg', type: 'file' },
+                    { name: 'fonts', type: 'folder', expanded: false,
+                      children: [
+                        { name: 'Montserrat-Regular.ttf', type: 'file' }
+                      ]
+                    }
+                  ]
                 },
                 { name: 'App.jsx', type: 'file' },
                 { name: 'main.jsx', type: 'file' },
@@ -198,19 +274,32 @@ const SideBar = ({
         }
     ]);
 
+    // Toggle folder expanded/collapsed state
+    const toggleFolder = (path, itemName) => {
+        console.log(`Toggle folder: ${itemName}`);
+    };
+
     // Recursive component to render file tree
     const renderTree = (items) => {
         return (
             <ul className="file-tree">
                 {items.map((item, index) => (
                     <li key={index} className={`tree-item ${item.type}`}>
-                        <div className="tree-item-content">
+                        <div 
+                            className="tree-item-content"
+                            onClick={() => item.type === 'folder' ? toggleFolder(index, item.name) : null}
+                        >
                             <span className="item-icon">
                                 {item.type === 'folder' ? 
                                   <FolderIcon isOpen={item.expanded} /> : 
                                   <FileIcon />}
                             </span>
                             <span className="item-name">{item.name}</span>
+                            {item.type === 'folder' && (
+                                <span className="folder-arrow">
+                                    {item.expanded ? '▾' : '▸'}
+                                </span>
+                            )}
                         </div>
                         {item.children && item.expanded && renderTree(item.children)}
                     </li>
@@ -227,6 +316,14 @@ const SideBar = ({
                     <div className="section-content">
                         <div className="section-header">
                             <span>EXPLORER</span>
+                            <div className="section-actions">
+                                <button className="icon-button" title="New File">
+                                    <FiFile size={14} />
+                                </button>
+                                <button className="icon-button" title="New Folder">
+                                    <FiFolder size={14} />
+                                </button>
+                            </div>
                         </div>
                         <div className="explorer-container">
                             {renderTree(explorerItems)}
@@ -238,46 +335,172 @@ const SideBar = ({
                     <div className="section-content">
                         <div className="section-header">
                             <span>DIAGRAM TOOLS</span>
+                            <div className="section-actions">
+                                <button className="icon-button" title="Add Table" onClick={onAddTable}>
+                                    <BiTable size={14} />
+                                </button>
+                            </div>
                         </div>
                         <div className="diagram-tools">
                             <div className="tool-group">
-                                <h3>Tables</h3>
-                                <button className="sidebar-btn" onClick={onAddTable}>
-                                    <span className="btn-icon">+</span> Add Table
+                                <h3>
+                                    <BiTable className="tool-group-icon" />
+                                    Tables
+                                </h3>
+                                <button className="sidebar-btn modern-btn" onClick={onAddTable}>
+                                    <FiPlus className="btn-icon" /> Add Table
                                 </button>
                             </div>
                             
                             <div className="tool-group">
-                                <h3>View</h3>
+                                <h3>
+                                    <RiZoomInLine className="tool-group-icon" />
+                                    View
+                                </h3>
                                 <div className="zoom-controls">
-                                    <button className="sidebar-btn" onClick={onZoomIn}>
-                                        <span className="btn-icon">+</span> Zoom In
+                                    <button className="sidebar-btn modern-btn" onClick={onZoomIn}>
+                                        <RiZoomInLine className="btn-icon" /> Zoom In
                                     </button>
-                                    <button className="sidebar-btn" onClick={onZoomOut}>
-                                        <span className="btn-icon">-</span> Zoom Out
+                                    <button className="sidebar-btn modern-btn" onClick={onZoomOut}>
+                                        <RiZoomOutLine className="btn-icon" /> Zoom Out
                                     </button>
                                     <div className="zoom-level-indicator">
-                                        Current: {zoomLevel}%
+                                        <div className="zoom-level-track">
+                                            <div 
+                                                className="zoom-level-fill" 
+                                                style={{width: `${Math.min(100, zoomLevel / 2)}%`}}
+                                            ></div>
+                                        </div>
+                                        <span>{zoomLevel}%</span>
                                     </div>
-                                    <button className="sidebar-btn" onClick={onResetView}>
-                                        <span className="btn-icon">↺</span> Reset View
+                                    <button className="sidebar-btn modern-btn" onClick={onResetView}>
+                                        <FiRefreshCw className="btn-icon" /> Reset View
                                     </button>
                                 </div>
                             </div>
                             
                             <div className="tool-group">
-                                <h3>Settings</h3>
+                                <h3>
+                                    <BiCog className="tool-group-icon" />
+                                    Settings
+                                </h3>
                                 <div className="setting-row">
-                                    <label className="setting-label">
+                                    <label className="modern-checkbox">
                                         <input 
                                             type="checkbox" 
                                             checked={snapToGrid} 
                                             onChange={onToggleGrid}
                                         />
-                                        <span>Snap to Grid</span>
+                                        <span className="checkmark">
+                                            {snapToGrid && <FiCheck size={12} />}
+                                        </span>
+                                        <span className="setting-label-text">
+                                            <FiGrid className="setting-icon" />
+                                            Snap to Grid
+                                        </span>
                                     </label>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                );
+            case 'history':
+                return (
+                    <div className="section-content">
+                        <div className="section-header">
+                            <span>HISTORY</span>
+                            <div className="section-actions">
+                                <button 
+                                    className="icon-button" 
+                                    title="Undo (Ctrl+Z)" 
+                                    onClick={handleUndo}
+                                    disabled={!canUndo}
+                                >
+                                    <FiRotateCcw size={14} />
+                                </button>
+                                <button 
+                                    className="icon-button" 
+                                    title="Redo (Ctrl+Y)" 
+                                    onClick={handleRedo}
+                                    disabled={!canRedo}
+                                >
+                                    <FiRotateCw size={14} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="history-controls">
+                            <button 
+                                className={`history-btn ${!canUndo ? 'disabled' : ''}`} 
+                                onClick={handleUndo}
+                                disabled={!canUndo}
+                            >
+                                <FiRotateCcw size={14} /> Undo
+                                <span className="history-keyboard-shortcut">Ctrl+Z</span>
+                            </button>
+                            <button 
+                                className={`history-btn ${!canRedo ? 'disabled' : ''}`}
+                                onClick={handleRedo}
+                                disabled={!canRedo}
+                            >
+                                <FiRotateCw size={14} /> Redo
+                                <span className="history-keyboard-shortcut">Ctrl+Y</span>
+                            </button>
+                        </div>
+                        
+                        <div className="history-filter">
+                            <input 
+                                type="text" 
+                                placeholder="Filter actions..." 
+                                aria-label="Filter history actions" 
+                            />
+                        </div>
+                        
+                        <div className="history-container">
+                            {actions.length > 0 ? (
+                                <>
+                                    <div className="history-timeline"></div>
+                                    {actions.length > 0 && actions[0].timestamp.includes('AM') && (
+                                        <div className="history-group-header">
+                                            <span>Morning</span>
+                                            <span>{new Date().toLocaleDateString()}</span>
+                                        </div>
+                                    )}
+                                    <ul className="history-list">
+                                        {actions.map((action, index) => (
+                                            <li 
+                                                key={action.id} 
+                                                className={`history-item ${index < currentPosition ? 'active' : 'future'}`}
+                                                onClick={() => handleGoToHistoryPosition(index + 1)}
+                                            >
+                                                <div className="history-item-icon">
+                                                    {getActionIcon(action.type)}
+                                                </div>
+                                                <div className="history-item-details">
+                                                    <span className="history-item-description">
+                                                        {getActionDescription(action)}
+                                                        <span className={`history-action-badge badge-${action.type}`}>
+                                                            {action.type}
+                                                        </span>
+                                                    </span>
+                                                    <span className="history-item-timestamp">
+                                                        {action.timestamp}
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            ) : (
+                                <div className="history-empty">
+                                    <div className="history-empty-icon">
+                                        <BiHistory size={32} />
+                                    </div>
+                                    <div className="history-empty-text">
+                                        <p>No actions recorded yet</p>
+                                        <p>Actions will appear here as you make changes to your diagram</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
@@ -288,9 +511,72 @@ const SideBar = ({
                             <span>SEARCH</span>
                         </div>
                         <div className="search-container">
-                            <input type="text" placeholder="Search" className="search-input" />
+                            <div className="search-input-container">
+                                <FiSearch className="search-icon-input" />
+                                <input type="text" placeholder="Search" className="search-input" />
+                            </div>
+                            <div className="search-options">
+                                <label className="search-option">
+                                    <input type="checkbox" />
+                                    <span>Case Sensitive</span>
+                                </label>
+                                <label className="search-option">
+                                    <input type="checkbox" />
+                                    <span>Whole Word</span>
+                                </label>
+                            </div>
                             <div className="search-results">
                                 <p>Type to search in files</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 'git':
+                return (
+                    <div className="section-content">
+                        <div className="section-header">
+                            <span>SOURCE CONTROL</span>
+                            <div className="section-actions">
+                                <button className="icon-button" title="Refresh">
+                                    <FiRefreshCw size={14} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="git-container">
+                            <div className="git-status">
+                                <BiGitBranch size={16} className="git-branch-icon" />
+                                <span className="git-branch-name">main</span>
+                            </div>
+                            <p className="git-message">No changes detected in workspace.</p>
+                        </div>
+                    </div>
+                );
+            case 'extensions':
+                return (
+                    <div className="section-content">
+                        <div className="section-header">
+                            <span>EXTENSIONS</span>
+                        </div>
+                        <div className="extensions-container">
+                            <div className="search-input-container">
+                                <FiSearch className="search-icon-input" />
+                                <input type="text" placeholder="Search Extensions" className="search-input" />
+                            </div>
+                            <div className="extension-list">
+                                <div className="extension-item">
+                                    <div className="extension-icon">Db</div>
+                                    <div className="extension-details">
+                                        <span className="extension-name">Database Diagram Generator</span>
+                                        <span className="extension-publisher">Database Tools</span>
+                                    </div>
+                                </div>
+                                <div className="extension-item">
+                                    <div className="extension-icon">Er</div>
+                                    <div className="extension-details">
+                                        <span className="extension-name">ER Diagram Preview</span>
+                                        <span className="extension-publisher">Database Tools</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

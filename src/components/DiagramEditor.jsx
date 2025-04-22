@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import DiagramColumn from './DiagramColumn';
 import DiagramRelationship from './DiagramRelationship';
+import { useHistory } from '../context/HistoryContext';
 
 const DiagramEditor = forwardRef((props, ref) => {
   const [columns, setColumns] = useState([]);
@@ -24,6 +25,10 @@ const DiagramEditor = forwardRef((props, ref) => {
   const editorRef = useRef(null);
   const contentRef = useRef(null);
   const columnRefs = useRef({});
+  const startDragPosition = useRef(null);
+  
+  // Get history context methods
+  const { createAction, undo, redo, canUndo, canRedo } = useHistory();
 
   // Expose methods to parent component via ref
   useImperativeHandle(ref, () => ({
@@ -33,8 +38,296 @@ const DiagramEditor = forwardRef((props, ref) => {
     resetView,
     toggleSnapToGrid,
     getZoomLevel: () => zoomLevel,
-    getSnapToGrid: () => snapToGrid
+    getSnapToGrid: () => snapToGrid,
+    undoAction: handleUndo,
+    redoAction: handleRedo,
+    canUndo: canUndo,
+    canRedo: canRedo,
+    applyUndoAction, // Expose the applyUndoAction method for use from sidebar
+    applyRedoCreateTable: (tableData) => {
+      setColumns(prevColumns => [...prevColumns, tableData]);
+    }
   }));
+
+  // Function to handle undo - now using continuous undo
+  const handleUndo = useCallback(() => {
+    const action = undo();
+    if (!action) return;
+    
+    // Apply the reverse action based on action type
+    if (!action) return;
+    
+    // Apply the action directly here instead of calling applyUndoAction to avoid circular dependency
+    switch (action.type) {
+      case 'create':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => prevColumns.filter(col => col.id !== action.tableId));
+        } else if (action.entity === 'relationship') {
+          setRelationships(prevRels => prevRels.filter(rel => rel.id !== action.relationshipId));
+        }
+        break;
+      
+      case 'delete':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => [...prevColumns, action.tableData]);
+        } else if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { ...col, fields: [...col.fields, action.fieldData] }
+                : col
+            )
+          );
+        } else if (action.entity === 'relationship') {
+          setRelationships(prevRels => [...prevRels, action.relationshipData]);
+        }
+        break;
+      
+      case 'move':
+        setColumns(prevColumns => 
+          prevColumns.map(col => 
+            col.id === action.tableId
+              ? { ...col, position: action.previousPosition }
+              : col
+          )
+        );
+        break;
+      
+      case 'update':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { ...col, ...action.previousData }
+                : col
+            )
+          );
+        } else if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { 
+                    ...col, 
+                    fields: col.fields.map(field => 
+                      field.id === action.fieldId
+                        ? { ...field, ...action.previousData }
+                        : field
+                    )
+                  }
+                : col
+            )
+          );
+        }
+        break;
+      
+      case 'add':
+        if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { 
+                    ...col, 
+                    fields: col.fields.filter(field => field.id !== action.fieldId)
+                  }
+                : col
+            )
+          );
+        }
+        break;
+      
+      default:
+        console.log('Unknown action type for undo:', action.type);
+    }
+
+    return action;
+  }, [undo, setColumns, setRelationships]);
+  
+  // Apply an undo action
+  const applyUndoAction = useCallback((action) => {
+    if (!action) return;
+    
+    // Apply the reverse action based on action type
+    switch (action.type) {
+      case 'create':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => prevColumns.filter(col => col.id !== action.tableId));
+        } else if (action.entity === 'relationship') {
+          setRelationships(prevRels => prevRels.filter(rel => rel.id !== action.relationshipId));
+        }
+        break;
+      
+      case 'delete':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => [...prevColumns, action.tableData]);
+        } else if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { ...col, fields: [...col.fields, action.fieldData] }
+                : col
+            )
+          );
+        } else if (action.entity === 'relationship') {
+          setRelationships(prevRels => [...prevRels, action.relationshipData]);
+        }
+        break;
+      
+      case 'move':
+        setColumns(prevColumns => 
+          prevColumns.map(col => 
+            col.id === action.tableId
+              ? { ...col, position: action.previousPosition }
+              : col
+          )
+        );
+        break;
+      
+      case 'update':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { ...col, ...action.previousData }
+                : col
+            )
+          );
+        } else if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { 
+                    ...col, 
+                    fields: col.fields.map(field => 
+                      field.id === action.fieldId
+                        ? { ...field, ...action.previousData }
+                        : field
+                    )
+                  }
+                : col
+            )
+          );
+        }
+        break;
+      
+      case 'add':
+        if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { 
+                    ...col, 
+                    fields: col.fields.filter(field => field.id !== action.fieldId)
+                  }
+                : col
+            )
+          );
+        }
+        break;
+      
+      default:
+        console.log('Unknown action type for undo:', action.type);
+    }
+  }, []);
+
+  // Function to handle redo
+  const handleRedo = useCallback(() => {
+    const action = redo();
+    if (!action) return;
+
+    // Apply the action based on action type
+    switch (action.type) {
+      case 'create':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => [...prevColumns, action.tableData]);
+        } else if (action.entity === 'relationship') {
+          setRelationships(prevRels => [...prevRels, action.relationshipData]);
+        }
+        break;
+      
+      case 'delete':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => prevColumns.filter(col => col.id !== action.tableId));
+        } else if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { 
+                    ...col, 
+                    fields: col.fields.filter(field => field.id !== action.fieldId)
+                  }
+                : col
+            )
+          );
+        } else if (action.entity === 'relationship') {
+          setRelationships(prevRels => prevRels.filter(rel => rel.id !== action.relationshipId));
+        }
+        break;
+      
+      case 'move':
+        setColumns(prevColumns => 
+          prevColumns.map(col => 
+            col.id === action.tableId
+              ? { ...col, position: action.newPosition }
+              : col
+          )
+        );
+        break;
+      
+      case 'update':
+        if (action.entity === 'table') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { ...col, ...action.newData }
+                : col
+            )
+          );
+        } else if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { 
+                    ...col, 
+                    fields: col.fields.map(field => 
+                      field.id === action.fieldId
+                        ? { ...field, ...action.newData }
+                        : field
+                    )
+                  }
+                : col
+            )
+          );
+        }
+        break;
+      
+      case 'add':
+        if (action.entity === 'field') {
+          setColumns(prevColumns => 
+            prevColumns.map(col => 
+              col.id === action.tableId
+                ? { 
+                    ...col, 
+                    fields: [...col.fields, action.fieldData]
+                  }
+                : col
+            )
+          );
+        }
+        break;
+      
+      default:
+        console.log('Unknown action type for redo:', action.type);
+    }
+  }, [redo]);
+
+  // Function to handle continuous undo through entire history
+  const handleContinuousUndo = () => {
+    const action = undo();
+    if (!action) return;
+    
+    // Apply the undo action
+    applyUndoAction(action);
+  };
 
   // Function to add a new column to the diagram
   const addColumn = (x = 50, y = 50) => {
@@ -63,8 +356,16 @@ const DiagramEditor = forwardRef((props, ref) => {
       zIndex: columns.length // Set z-index based on creation order
     };
 
+    // Add to state
     setColumns([...columns, newColumn]);
     setNextId(nextId + 1);
+    
+    // Record action in history
+    createAction('create', 'table', {
+      tableId: newColumn.id,
+      name: newColumn.name,
+      tableData: newColumn
+    });
   };
 
   // Function to handle double click on the canvas to add a new column
@@ -88,6 +389,9 @@ const DiagramEditor = forwardRef((props, ref) => {
     if (dragTimer.current) {
       clearTimeout(dragTimer.current);
     }
+
+    // Save the initial position for history tracking
+    startDragPosition.current = { ...column.position };
 
     // Get exact mouse position in client coordinates
     const mouseX = e.clientX;
@@ -337,10 +641,30 @@ const DiagramEditor = forwardRef((props, ref) => {
       // Apply inertia effect for smoother dragging experience
       applyInertia();
       
+      // Record position change in history if position actually changed
+      if (startDragPosition.current && draggedColumn) {
+        const currentColumn = columns.find(col => col.id === draggedColumn);
+        if (currentColumn) {
+          const originalPosition = startDragPosition.current;
+          const newPosition = currentColumn.position;
+          
+          // Only record if position actually changed
+          if (originalPosition.x !== newPosition.x || originalPosition.y !== newPosition.y) {
+            createAction('move', 'table', {
+              tableId: draggedColumn,
+              name: currentColumn.name,
+              previousPosition: originalPosition,
+              newPosition: newPosition
+            });
+          }
+        }
+      }
+      
       // Clear drag state
       setIsDragging(false);
       setDraggedColumn(null);
       setDragImage(null);
+      startDragPosition.current = null;
     }
   };
 
@@ -436,6 +760,107 @@ const DiagramEditor = forwardRef((props, ref) => {
 
   // Function to update a column's name or fields
   const updateColumn = (columnId, updates) => {
+    const originalColumn = columns.find(col => col.id === columnId);
+    if (!originalColumn) return;
+
+    // Check if we are updating the name
+    if (updates.name && updates.name !== originalColumn.name) {
+      // Record the name change in history
+      createAction('update', 'table', {
+        tableId: columnId,
+        name: updates.name,
+        previousData: { name: originalColumn.name },
+        newData: { name: updates.name }
+      });
+    }
+    
+    // Check if we are updating fields
+    if (updates.fields) {
+      const originalFields = originalColumn.fields;
+      const newFields = updates.fields;
+      
+      // If field count decreased, a field was deleted
+      if (newFields.length < originalFields.length) {
+        const deletedField = originalFields.find(
+          originalField => !newFields.some(newField => newField.id === originalField.id)
+        );
+        
+        if (deletedField) {
+          createAction('delete', 'field', {
+            tableId: columnId,
+            fieldId: deletedField.id,
+            name: deletedField.name,
+            fieldData: deletedField,
+            table: originalColumn.name
+          });
+        }
+      }
+      
+      // If field count increased, a field was added
+      else if (newFields.length > originalFields.length) {
+        const addedField = newFields.find(
+          newField => !originalFields.some(originalField => originalField.id === newField.id)
+        );
+        
+        if (addedField) {
+          createAction('add', 'field', {
+            tableId: columnId,
+            fieldId: addedField.id,
+            name: addedField.name,
+            fieldData: addedField,
+            table: originalColumn.name
+          });
+        }
+      }
+      
+      // Check for field updates (name or type changes)
+      else {
+        for (let i = 0; i < newFields.length; i++) {
+          const newField = newFields[i];
+          const originalField = originalFields.find(field => field.id === newField.id);
+          
+          if (originalField) {
+            // Check if field name changed
+            if (newField.name !== originalField.name) {
+              createAction('update', 'field', {
+                tableId: columnId,
+                fieldId: newField.id,
+                name: newField.name,
+                previousData: { name: originalField.name },
+                newData: { name: newField.name },
+                table: originalColumn.name
+              });
+            }
+            
+            // Check if field type changed
+            else if (newField.type !== originalField.type) {
+              createAction('update', 'field', {
+                tableId: columnId,
+                fieldId: newField.id,
+                name: newField.name,
+                previousData: { type: originalField.type },
+                newData: { type: newField.type },
+                table: originalColumn.name
+              });
+            }
+            
+            // Check if primary key status changed
+            else if (newField.isPrimary !== originalField.isPrimary) {
+              createAction('update', 'field', {
+                tableId: columnId,
+                fieldId: newField.id,
+                name: newField.name,
+                previousData: { isPrimary: originalField.isPrimary },
+                newData: { isPrimary: newField.isPrimary },
+                table: originalColumn.name
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Apply updates to columns
     setColumns(columns.map(col => 
       col.id === columnId ? { ...col, ...updates } : col
     ));
@@ -530,6 +955,25 @@ const DiagramEditor = forwardRef((props, ref) => {
         handleZoom('out');
         e.preventDefault();
       }
+      
+      // Handle undo/redo
+      if (e.key.toLowerCase() === 'z') {
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+          // CTRL + Z for undo
+          handleUndo();
+          e.preventDefault();
+        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          // CTRL + SHIFT + Z for redo
+          handleRedo();
+          e.preventDefault();
+        }
+      }
+      
+      // CTRL + Y for redo
+      if (e.key.toLowerCase() === 'y' && (e.ctrlKey || e.metaKey)) {
+        handleRedo();
+        e.preventDefault();
+      }
     };
     
     const handleKeyUp = (e) => {
@@ -561,7 +1005,7 @@ const DiagramEditor = forwardRef((props, ref) => {
       window.removeEventListener('keyup', handleKeyUp);
       editorRef.current?.removeEventListener('wheel', handleWheel);
     };
-  }, [isDragging, isConnecting, isPanning, zoomLevel, panOffset, snapToGrid]);
+  }, [isDragging, isConnecting, isPanning, zoomLevel, panOffset, snapToGrid, handleUndo, handleRedo, cancelConnection, resetView]); // Added missing dependencies
 
   // Use effect to notify parent of state changes
   useEffect(() => {
@@ -595,26 +1039,38 @@ const DiagramEditor = forwardRef((props, ref) => {
       onMouseUp={stopDragging}
       onMouseDown={startPanning}
     >
-      <div className="toolbar">
-        <button onClick={() => addColumn(50 + panOffset.x, 50 + panOffset.y)}>
-          <span className="btn-icon">+</span> Add Table
-        </button>
-        <button onClick={() => handleZoom('in')}>
-          <span className="btn-icon">+</span> Zoom In
-        </button>
-        <button onClick={() => handleZoom('out')}>
-          <span className="btn-icon">-</span> Zoom Out
-        </button>
-        <button onClick={resetView}>
-          <span className="btn-icon">↺</span> Reset View
-        </button>
-        <button 
-          className={snapToGrid ? 'active' : ''}
-          onClick={toggleSnapToGrid} 
-          title={snapToGrid ? 'Turn off snap to grid' : 'Turn on snap to grid'}
-        >
-          <span className="btn-icon">⌗</span> Grid Snap
-        </button>
+      <div className="enhanced-toolbar">
+        <div className="toolbar-group">
+          <button className="toolbar-btn" onClick={() => addColumn(50 + panOffset.x, 50 + panOffset.y)}>
+            <span className="btn-icon">+</span> Add Table
+          </button>
+        </div>
+        
+        <div className="toolbar-group">
+          <button className="toolbar-btn" onClick={() => handleZoom('in')}>
+            <span className="btn-icon">+</span> Zoom In
+          </button>
+          <button className="toolbar-btn" onClick={() => handleZoom('out')}>
+            <span className="btn-icon">−</span> Zoom Out
+          </button>
+          <button className="toolbar-btn" onClick={resetView}>
+            <span className="btn-icon">↺</span> Reset View
+          </button>
+        </div>
+        
+        <div className="toolbar-group">
+          <button 
+            className={`toolbar-btn ${snapToGrid ? 'active' : ''}`}
+            onClick={toggleSnapToGrid} 
+            title={snapToGrid ? 'Turn off snap to grid' : 'Turn on snap to grid'}
+          >
+            <span className="btn-icon">⌗</span> Grid Snap
+          </button>
+        </div>
+
+        <div className="toolbar-info">
+          <span className="info-item">Zoom: {zoomLevel}%</span>
+        </div>
       </div>
       
       <div 
@@ -677,15 +1133,9 @@ const DiagramEditor = forwardRef((props, ref) => {
         </div>
       )}
       
-      {/* Zoom level indicator */}
-      <div className="diagram-zoom-controls">
-        <div className="zoom-btn" onClick={() => handleZoom('out')}>−</div>
-        <div className="zoom-level">{zoomLevel}%</div>
-        <div className="zoom-btn" onClick={() => handleZoom('in')}>+</div>
-      </div>
-      
       {/* Mini-map for navigation */}
       <div className="diagram-minimap">
+        <div className="minimap-title">Navigator</div>
         <div className="minimap-content">
           <div 
             className="minimap-viewport" 
@@ -698,6 +1148,23 @@ const DiagramEditor = forwardRef((props, ref) => {
       {isDragging && !snapToGrid && (
         <div className="alignment-guides"></div>
       )}
+      
+      {/* Enhanced keyboard shortcuts help tooltip */}
+      <div className="keyboard-shortcuts-hint">
+        <div className="hint-icon">?</div>
+        <div className="hint-tooltip">
+          <h3>Keyboard Shortcuts</h3>
+          <ul>
+            <li><kbd>Ctrl</kbd> + <kbd>Z</kbd> - Undo last action</li>
+            <li><kbd>Ctrl</kbd> + <kbd>Y</kbd> - Redo action</li>
+            <li><kbd>Ctrl</kbd> + <kbd>+/-</kbd> - Zoom in/out</li>
+            <li><kbd>Ctrl</kbd> + <kbd>0</kbd> - Reset view</li>
+            <li><kbd>Alt</kbd> + <kbd>Click+Drag</kbd> - Pan canvas</li>
+            <li><kbd>Esc</kbd> - Cancel connection</li>
+            <li><kbd>Double-click</kbd> - Create new table</li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 });

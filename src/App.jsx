@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import TitleBar from './components/titlebar'
-import SideBar from './components/sidedbar'
+import SideBar from './components/sidedbar'  // Correctly matching the actual filename
 import DiagramEditor from './components/DiagramEditor'
+import { HistoryProvider } from './context/HistoryContext'
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -74,35 +75,84 @@ function App() {
     setSnapToGrid(newSnapToGrid)
   }
 
+  // Function to handle undo action from sidebar
+  const handleUndoAction = (action) => {
+    if (diagramEditorRef.current) {
+      diagramEditorRef.current.undoAction();
+    }
+  }
+  
+  // Function to handle redo action from sidebar
+  const handleRedoAction = (action) => {
+    if (diagramEditorRef.current) {
+      diagramEditorRef.current.redoAction();
+    }
+  }
+  
+  // Function to handle history navigation
+  const handleHistoryNavigation = (navigationResult) => {
+    if (diagramEditorRef.current && navigationResult) {
+      // Apply a series of actions (either undo or redo)
+      if (navigationResult.direction === 'undo') {
+        // Apply all undo actions in sequence
+        navigationResult.actions.forEach(action => {
+          diagramEditorRef.current.applyUndoAction(action);
+        });
+      } else if (navigationResult.direction === 'redo') {
+        // Apply all redo actions in sequence
+        navigationResult.actions.forEach(action => {
+          if (action.type === 'create') {
+            if (action.entity === 'table') {
+              diagramEditorRef.current.applyRedoCreateTable(action.tableData);
+            }
+          } else if (action.type === 'delete') {
+            // Handle delete
+          } else if (action.type === 'move') {
+            // Handle move
+          } else if (action.type === 'update') {
+            // Handle update
+          } else if (action.type === 'add') {
+            // Handle add
+          }
+        });
+      }
+    }
+  }
+
   return (
-    <div className="vscode-app">
-      <TitleBar />
-      <SideBar 
-        onCollapse={handleSidebarCollapse} 
-        onWidthChange={handleSidebarWidthChange}
-        onAddTable={handleAddTable}
-        onToggleGrid={handleToggleGrid}
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onResetView={handleResetView}
-        snapToGrid={snapToGrid}
-        zoomLevel={zoomLevel}
-      />
-      <div 
-        className="app-content"
-        style={{ 
-          marginLeft: sidebarCollapsed ? 
-            `${activityBarWidth}px` : 
-            `${activityBarWidth + sidebarWidth}px` 
-        }}
-      >
-        <DiagramEditor 
-          ref={diagramEditorRef}
-          onZoomChange={handleZoomChange}
-          onSnapToGridChange={handleSnapToGridChange}
+    <HistoryProvider>
+      <div className="vscode-app">
+        <TitleBar />
+        <SideBar 
+          onCollapse={handleSidebarCollapse} 
+          onWidthChange={handleSidebarWidthChange}
+          onAddTable={handleAddTable}
+          onToggleGrid={handleToggleGrid}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetView={handleResetView}
+          snapToGrid={snapToGrid}
+          zoomLevel={zoomLevel}
+          onUndoAction={handleUndoAction}
+          onRedoAction={handleRedoAction}
+          onHistoryNavigation={handleHistoryNavigation}
         />
+        <div 
+          className="app-content"
+          style={{ 
+            marginLeft: sidebarCollapsed ? 
+              `${activityBarWidth}px` : 
+              `${activityBarWidth + sidebarWidth}px` 
+          }}
+        >
+          <DiagramEditor 
+            ref={diagramEditorRef}
+            onZoomChange={handleZoomChange}
+            onSnapToGridChange={handleSnapToGridChange}
+          />
+        </div>
       </div>
-    </div>
+    </HistoryProvider>
   )
 }
 
